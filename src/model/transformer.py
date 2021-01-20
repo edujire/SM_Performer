@@ -12,6 +12,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from performer_pytorch import SelfAttention
+
 
 
 N_MAX_POSITIONS = 4096  # maximum input sequence length
@@ -201,11 +203,11 @@ class TransformerModel(nn.Module):
             self.encoder_attn = nn.ModuleList()
 
         for layer_id in range(self.n_layers):
-            self.attentions.append(MultiHeadAttention(self.n_heads, self.dim, dropout=self.attention_dropout))
+            self.attentions.append(SelfAttention(heads = self.n_heads, dim = self.dim, dropout=self.attention_dropout))
             self.layer_norm1.append(nn.LayerNorm(self.dim, eps=1e-12))
             if self.is_decoder:
                 self.layer_norm15.append(nn.LayerNorm(self.dim, eps=1e-12))
-                self.encoder_attn.append(MultiHeadAttention(self.n_heads, self.dim, dropout=self.attention_dropout))
+                self.encoder_attn.append(SelfAttention(heads = self.n_heads, dim = self.dim, dropout=self.attention_dropout))
             self.ffns.append(TransformerFFN(self.dim, self.hidden_dim, self.dim, dropout=self.dropout))
             self.layer_norm2.append(nn.LayerNorm(self.dim, eps=1e-12))
 
