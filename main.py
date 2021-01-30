@@ -144,6 +144,8 @@ def get_parser():
                         help="Multi-GPU - Local rank")
     parser.add_argument("--master_port", type=int, default=-1,
                         help="Master port (for multi-node SLURM jobs)")
+    parser.add_argument("--nb_features", type=int, default = 64,
+                        help="number of random features")
 
     return parser
 
