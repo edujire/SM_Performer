@@ -12,6 +12,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from performer_pytorch import FastAttention
+
 
 
 N_MAX_POSITIONS = 4096  # maximum input sequence length
@@ -72,6 +74,7 @@ class MultiHeadAttention(nn.Module):
         self.n_heads = n_heads
         self.dropout = dropout
         assert self.dim % self.n_heads == 0
+        self.attn_fn = FastAttention(dim_heads = dim,nb_features = dim*np.log(dim),causal = False)
 
         self.q_lin = nn.Linear(dim, dim)
         self.k_lin = nn.Linear(dim, dim)
@@ -121,16 +124,17 @@ class MultiHeadAttention(nn.Module):
                     k, v = cache[self.layer_id]
             cache[self.layer_id] = (k, v)
 
-        q = q / math.sqrt(dim_per_head)                                       # (bs, n_heads, qlen, dim_per_head)
-        scores = torch.matmul(q, k.transpose(2, 3))                           # (bs, n_heads, qlen, klen)
-        mask = (mask == 0).view(mask_reshape).expand_as(scores)               # (bs, n_heads, qlen, klen)
-        scores.masked_fill_(mask, -float('inf'))                              # (bs, n_heads, qlen, klen)
+        # q = q / math.sqrt(dim_per_head)                                       # (bs, n_heads, qlen, dim_per_head)
+        # scores = torch.matmul(q, k.transpose(2, 3))                           # (bs, n_heads, qlen, klen)
+        # mask = (mask == 0).view(mask_reshape).expand_as(scores)               # (bs, n_heads, qlen, klen)
+        # scores.masked_fill_(mask, -float('inf'))                              # (bs, n_heads, qlen, klen)
+        #
+        # weights = F.softmax(scores.float(), dim=-1).type_as(scores)           # (bs, n_heads, qlen, klen)
+        # weights = F.dropout(weights, p=self.dropout, training=self.training)  # (bs, n_heads, qlen, klen)
+        # context = torch.matmul(weights, v)                                    # (bs, n_heads, qlen, dim_per_head)
+        # context = unshape(context)                                            # (bs, qlen, dim)
 
-        weights = F.softmax(scores.float(), dim=-1).type_as(scores)           # (bs, n_heads, qlen, klen)
-        weights = F.dropout(weights, p=self.dropout, training=self.training)  # (bs, n_heads, qlen, klen)
-        context = torch.matmul(weights, v)                                    # (bs, n_heads, qlen, dim_per_head)
-        context = unshape(context)                                            # (bs, qlen, dim)
-
+        context = self.attn_fn(q, k, v)
         if TransformerModel.STORE_OUTPUTS and not self.training:
             self.outputs = weights.detach().cpu()
 
