@@ -206,11 +206,11 @@ class TransformerModel(nn.Module):
             self.encoder_attn = nn.ModuleList()
 
         for layer_id in range(self.n_layers):
-            self.attentions.append(MultiHeadAttention(self.n_heads, self.dim, dropout=self.attention_dropout), nb_features = self.nb_features)
+            self.attentions.append(MultiHeadAttention(self.n_heads, self.dim, dropout=self.attention_dropout, nb_features = self.nb_features)
             self.layer_norm1.append(nn.LayerNorm(self.dim, eps=1e-12))
             if self.is_decoder:
                 self.layer_norm15.append(nn.LayerNorm(self.dim, eps=1e-12))
-                self.encoder_attn.append(MultiHeadAttention(self.n_heads, self.dim, dropout=self.attention_dropout), nb_features = self.nb_features)
+                self.encoder_attn.append(MultiHeadAttention(self.n_heads, self.dim, dropout=self.attention_dropout, nb_features = self.nb_features)
             self.ffns.append(TransformerFFN(self.dim, self.hidden_dim, self.dim, dropout=self.dropout))
             self.layer_norm2.append(nn.LayerNorm(self.dim, eps=1e-12))
 
