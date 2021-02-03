@@ -88,8 +88,10 @@ class MultiHeadAttention(nn.Module):
         # Input is (bs, qlen, dim)
         # Mask is (bs, klen) (non-causal) or (bs, klen, klen)
         bs, qlen, dim = input.size()
+        causal = False
         if kv is None:
             klen = qlen if cache is None else cache['slen'] + qlen
+            causal = True
         else:
             klen = kv.size(1)
         assert dim == self.dim, 'Dimensions do not match: %s input vs %s configured' % (dim, self.dim)
@@ -134,7 +136,7 @@ class MultiHeadAttention(nn.Module):
         # context = torch.matmul(weights, v)                                    # (bs, n_heads, qlen, dim_per_head)
         # context = unshape(context)                                            # (bs, qlen, dim)
 
-        context = self.attn_fn(q, k, v)
+        context = self.attn_fn(q, k, v,causal = causal)
         context = unshape(context)
         if TransformerModel.STORE_OUTPUTS and not self.training:
             self.outputs = weights.detach().cpu()
