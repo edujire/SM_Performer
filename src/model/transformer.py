@@ -135,6 +135,7 @@ class MultiHeadAttention(nn.Module):
         # context = unshape(context)                                            # (bs, qlen, dim)
 
         context = self.attn_fn(q, k, v)
+        context = unshape(context)
         if TransformerModel.STORE_OUTPUTS and not self.training:
             self.outputs = weights.detach().cpu()
 
