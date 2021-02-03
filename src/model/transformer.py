@@ -67,14 +67,14 @@ class MultiHeadAttention(nn.Module):
 
     NEW_ID = itertools.count()
 
-    def __init__(self, n_heads, dim, dropout,nb_features):
+    def __init__(self, n_heads, dim, dropout,nb_features, causal):
         super().__init__()
         self.layer_id = next(MultiHeadAttention.NEW_ID)
         self.dim = dim
         self.n_heads = n_heads
         self.dropout = dropout
         assert self.dim % self.n_heads == 0
-        self.attn_fn = FastAttention(dim_heads = dim//n_heads,nb_features = nb_features,causal = False)
+        self.attn_fn = FastAttention(dim_heads = dim//n_heads,nb_features = nb_features,causal = causal)
 
         self.q_lin = nn.Linear(dim, dim)
         self.k_lin = nn.Linear(dim, dim)
@@ -88,10 +88,8 @@ class MultiHeadAttention(nn.Module):
         # Input is (bs, qlen, dim)
         # Mask is (bs, klen) (non-causal) or (bs, klen, klen)
         bs, qlen, dim = input.size()
-        causal = False
         if kv is None:
             klen = qlen if cache is None else cache['slen'] + qlen
-            causal = True
         else:
             klen = kv.size(1)
         assert dim == self.dim, 'Dimensions do not match: %s input vs %s configured' % (dim, self.dim)
@@ -136,7 +134,7 @@ class MultiHeadAttention(nn.Module):
         # context = torch.matmul(weights, v)                                    # (bs, n_heads, qlen, dim_per_head)
         # context = unshape(context)                                            # (bs, qlen, dim)
 
-        context = self.attn_fn(q, k, v,causal = causal)
+        context = self.attn_fn(q, k, v)
         context = unshape(context)
         if TransformerModel.STORE_OUTPUTS and not self.training:
             self.outputs = weights.detach().cpu()
@@ -209,11 +207,11 @@ class TransformerModel(nn.Module):
             self.encoder_attn = nn.ModuleList()
 
         for layer_id in range(self.n_layers):
-            self.attentions.append(MultiHeadAttention(self.n_heads, self.dim, dropout=self.attention_dropout, nb_features = self.nb_features))
+            self.attentions.append(MultiHeadAttention(self.n_heads, self.dim, dropout=self.attention_dropout, nb_features = self.nb_features,causal = False))
             self.layer_norm1.append(nn.LayerNorm(self.dim, eps=1e-12))
             if self.is_decoder:
                 self.layer_norm15.append(nn.LayerNorm(self.dim, eps=1e-12))
-                self.encoder_attn.append(MultiHeadAttention(self.n_heads, self.dim, dropout=self.attention_dropout, nb_features = self.nb_features))
+                self.encoder_attn.append(MultiHeadAttention(self.n_heads, self.dim, dropout=self.attention_dropout, nb_features = self.nb_features, causal = True))
             self.ffns.append(TransformerFFN(self.dim, self.hidden_dim, self.dim, dropout=self.dropout))
             self.layer_norm2.append(nn.LayerNorm(self.dim, eps=1e-12))
 
