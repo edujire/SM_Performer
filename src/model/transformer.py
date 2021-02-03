@@ -74,7 +74,7 @@ class MultiHeadAttention(nn.Module):
         self.n_heads = n_heads
         self.dropout = dropout
         assert self.dim % self.n_heads == 0
-        self.attn_fn = FastAttention(dim_heads = dim,nb_features = nb_features,causal = False)
+        self.attn_fn = FastAttention(dim_heads = dim//n_heads,nb_features = nb_features,causal = False)
 
         self.q_lin = nn.Linear(dim, dim)
         self.k_lin = nn.Linear(dim, dim)
