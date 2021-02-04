@@ -133,7 +133,10 @@ class MultiHeadAttention(nn.Module):
         # weights = F.dropout(weights, p=self.dropout, training=self.training)  # (bs, n_heads, qlen, klen)
         # context = torch.matmul(weights, v)                                    # (bs, n_heads, qlen, dim_per_head)
         # context = unshape(context)                                            # (bs, qlen, dim)
-
+        if (q.shape[-2] > k.shape[-2]):
+          k = torch.cat((k,torch.zeros(q.shape[0],q.shape[1],q.shape[2]-k.shape[2],q.shape[3])),dim=-2)
+        elif (k.shape[-2] > q.shape[-2]):
+          q = torch.cat((q,torch.zeros(k.shape[0],k.shape[1],k.shape[2]-q.shape[2],k.shape[3])),dim=-2)
         context = self.attn_fn(q, k, v)
         context = unshape(context)
         if TransformerModel.STORE_OUTPUTS and not self.training:
