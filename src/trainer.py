@@ -21,7 +21,11 @@ from .optim import get_optimizer
 from .utils import to_cuda
 
 if torch.cuda.is_available():
-    import apex
+    try:
+        import apex
+        APEX_AVAILABLE = True
+    except:
+        APEX_AVAILABLE = False
 
 
 logger = getLogger()
