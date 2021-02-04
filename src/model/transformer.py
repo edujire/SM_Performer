@@ -132,12 +132,14 @@ class MultiHeadAttention(nn.Module):
         # weights = F.softmax(scores.float(), dim=-1).type_as(scores)           # (bs, n_heads, qlen, klen)
         # weights = F.dropout(weights, p=self.dropout, training=self.training)  # (bs, n_heads, qlen, klen)
         # context = torch.matmul(weights, v)                                    # (bs, n_heads, qlen, dim_per_head)
-        # context = unshape(context)                                            # (bs, qlen, dim)
+        # context = unshape(context)
+        q_shape = q.shape[-2]                                          # (bs, qlen, dim)
         if (q.shape[-2] > k.shape[-2]):
           k = torch.cat((k,torch.zeros((q.shape[0],q.shape[1],q.shape[2]-k.shape[2],q.shape[3]),device=k.device)),dim=-2)
         elif (k.shape[-2] > q.shape[-2]):
           q = torch.cat((q,torch.zeros((k.shape[0],k.shape[1],k.shape[2]-q.shape[2],k.shape[3]),device=q.device)),dim=-2)
         context = self.attn_fn(q, k, v)
+        context = context[:,:,:q_shape,:]
         context = unshape(context)
         if TransformerModel.STORE_OUTPUTS and not self.training:
             self.outputs = weights.detach().cpu()
