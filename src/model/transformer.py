@@ -136,10 +136,14 @@ class MultiHeadAttention(nn.Module):
         q_shape = q.shape[-2]                                          # (bs, qlen, dim)
         if (q.shape[-2] > k.shape[-2]):
           k = torch.cat((k,torch.zeros((q.shape[0],q.shape[1],q.shape[2]-k.shape[2],q.shape[3]),device=k.device)),dim=-2)
-        elif (k.shape[-2] > q.shape[-2]):
-          q = torch.cat((q,torch.zeros((k.shape[0],k.shape[1],k.shape[2]-q.shape[2],k.shape[3]),device=q.device)),dim=-2)
+        # elif (k.shape[-2] > q.shape[-2]):
+        #   q = torch.cat((q,torch.zeros((k.shape[0],k.shape[1],k.shape[2]-q.shape[2],k.shape[3]),device=q.device)),dim=-2)
+        elif (k.shape[-2] < q.shape[-2]):
+            k = k[:,:,:q_shape,:]
+            v = v[:,:,:q_shape,:]
         context = self.attn_fn(q, k, v)
-        context = unshape(context[:,:,:q_shape,:])
+        # context = context[:,:,:q_shape,:]
+        context = unshape(context)
         if TransformerModel.STORE_OUTPUTS and not self.training:
             self.outputs = weights.detach().cpu()
 
