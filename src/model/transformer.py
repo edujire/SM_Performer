@@ -134,7 +134,7 @@ class MultiHeadAttention(nn.Module):
         # context = torch.matmul(weights, v)                                    # (bs, n_heads, qlen, dim_per_head)
         # context = unshape(context)
         q_shape = q.shape[-2]                                                   # (bs, qlen, dim)
-        with torch.no_grad:
+        with torch.no_grad():
             if (q.shape[-2] > k.shape[-2]):
               k = torch.cat((k,torch.zeros((q.shape[0],q.shape[1],q.shape[2]-k.shape[2],q.shape[3]),device=k.device)),dim=-2)
             # elif (k.shape[-2] > q.shape[-2]):
